@@ -30,7 +30,6 @@ class OpenAIModel(LLM):
     """
 
     def __init__(self, stop_token: str, model_name: str = "gpt-5-mini", openai_model: bool = True):
-        # TODO(student): Initialize your OpenAI client or chosen LLM provider here.
         self.stop_token = stop_token
         self.model_name = model_name
         self.openai_model = openai_model
@@ -39,8 +38,6 @@ class OpenAIModel(LLM):
             self._client = OpenAI()
         else:
             self._client = VLLM(model_name)
-
-        # raise NotImplementedError("OpenAIModel.__init__ must be implemented by the student")
 
     def generate(self, prompt: str) -> str:
         if self.openai_model:
