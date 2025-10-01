@@ -104,8 +104,20 @@ class ReactAgent:
         - The signature of each tool
         - The docstring of each tool
         """
-        # TODO(student): Register tools and construct tool descriptions for the system prompt.
-        raise NotImplementedError("add_functions must be implemented by the student")
+
+        for tool in tools:
+            self.function_map[tool.__name__] = tool
+        # Update system prompt to include tool descriptions
+        tool_info = "\n".join([
+            f"Function: {tool.__name__}{inspect.signature(tool)}\n{inspect.getdoc(tool)}\n"
+            for tool in self.function_map.values()
+        ])
+        system_message = self.id_to_message[self.system_message_id - 1]
+        system_message["content"] = (
+            "You are a Smart ReAct agent.\n"
+            "--- AVAILABLE TOOLS ---\n" + tool_info +
+            "\n--- RESPONSE FORMAT ---\n" + self.parser.response_format
+        )
     
     def finish(self, result: str):
         """The agent must call this function with the final result when it has solved the given task. The function calls "git add -A and git diff --cached" to generate a patch and returns the patch as submission.
@@ -144,8 +156,34 @@ class ReactAgent:
             - Append tool result to the tree
             - If `finish` is called, return the final result
         """
-        # TODO(student): Implement the Reason-Act loop per the assignment, including error handling.
-        raise NotImplementedError("run must be implemented by the student")
+
+        self.set_message_content(self.user_message_id, task)
+
+        for step in range(max_steps):
+            context = self.get_context()
+            try:
+                response = self.llm.generate(context)
+                self.add_message("assistant", response, parent=self.current_message_id)
+                self.current_message_id = self._id_counter - 1
+
+                func_name, kwargs = self.parser.extract_function_call(response)
+                if func_name not in self.function_map:
+                    raise ValueError(f"Unknown function: {func_name}")
+
+                result = self.function_map[func_name](**kwargs)
+
+                if func_name == "finish":
+                    return result
+
+                self.add_message("tool", str(result), parent=self.current_message_id)
+                self.current_message_id = self._id_counter - 1
+
+            except Exception as e:
+                error_msg = f"Error during step {step}: {str(e)}"
+                self.add_message("tool", error_msg, parent=self.current_message_id)
+                self.current_message_id = self._id_counter - 1
+
+        return "Max steps reached without finishing."
 
     def message_id_to_context(self, message_id: int) -> str:
         """
@@ -175,12 +213,13 @@ class ReactAgent:
 
 def main():
     from envs import DumbEnvironment
-    llm = OpenAIModel("----END_FUNCTION_CALL----", "gpt-4o-mini")
+    llm = OpenAIModel("----END_FUNCTION_CALL----", model_name="/u/shawntan/proj/mayank/lm-engine/Qwen1.5-MoE-A2.7B", openai_model=False)
+    # llm = OpenAIModel("----END_FUNCTION_CALL----", "gpt-4o-mini")
     parser = ResponseParser()
 
     env = DumbEnvironment()
     dumb_agent = ReactAgent("dumb-agent", parser, llm)
-    dumb_agent.add_functions([env.run_bash_cmd])
+    dumb_agent.add_functions([env.execute])
     result = dumb_agent.run("Show the contents of all files in the current directory.", max_steps=10)
     print(result)
 
