@@ -61,8 +61,7 @@ class ReactAgent:
 
     def set_message_content(self, message_id: int, content: str) -> None:
         """Update message content by id."""
-        # TODO(student): Implement message content update.
-        raise NotImplementedError("set_message_content must be implemented by the student")
+        self.id_to_message[message_id - 1]["content"] = content
 
     def get_context(self) -> str:
         """
