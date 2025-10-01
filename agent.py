@@ -92,8 +92,15 @@ class ReactAgent:
         """
         Build the full LLM context by walking from the root to the current message.
         """
-        # TODO(student): Implement context construction.
-        raise NotImplementedError("get_context must be implemented by the student")
+
+        path = []
+        curr_id = self.current_message_id
+        while curr_id is not None:
+            message = self.id_to_message[curr_id - 1]
+            path.append(curr_id)
+            curr_id = message["parent"]
+        path.reverse()
+        return "\n".join([self.message_id_to_context(mid) for mid in path])
 
     # -------------------- REQUIRED TOOLS --------------------
     def add_functions(self, tools: List[Callable]):
