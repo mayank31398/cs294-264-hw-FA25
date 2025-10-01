@@ -52,6 +52,8 @@ class OpenAIModel(LLM):
             else:
                 response = self._client.generate(prompt)[0].outputs[0].text
 
+            response += self.stop_token
+
             return response
         except Exception as e:
             raise RuntimeError(f"Failed to generate from OpenAI model: {e}")
