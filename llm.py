@@ -43,20 +43,14 @@ class OpenAIModel(LLM):
         # raise NotImplementedError("OpenAIModel.__init__ must be implemented by the student")
 
     def generate(self, prompt: str) -> str:
-        # TODO(student): Call the model, obtain text, and ensure the stop token is present.
-        # Return the raw text including the terminal stop token required by the parser.
+        if self.openai_model:
+            response = self._client.responses.create(model="gpt-5", input=prompt).output_text
+        else:
+            response = self._client.generate(prompt)[0].outputs[0].text
 
-        try:
-            if self.openai_model:
-                response = self._client.responses.create(model="gpt-5", input=prompt).output_text
-            else:
-                response = self._client.generate(prompt)[0].outputs[0].text
+        response += self.stop_token
 
-            response += self.stop_token
-
-            return response
-        except Exception as e:
-            raise RuntimeError(f"Failed to generate from OpenAI model: {e}")
+        return response
 
 
 if __name__ == "__main__":
