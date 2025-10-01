@@ -24,7 +24,7 @@ class OpenAIModel(LLM):
     """
     Example LLM implementation using OpenAI's Responses API.
 
-    TODO(student): Implement this class to call your chosen backend (e.g., OpenAI GPT-5 mini)
+    Implement this class to call your chosen backend (e.g., OpenAI GPT-5 mini)
     and return the model's text output. You should ensure the model produces the response
     format required by ResponseParser and include the stop token in the output string.
     """
