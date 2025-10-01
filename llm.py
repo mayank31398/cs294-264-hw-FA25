@@ -33,6 +33,7 @@ class OpenAIModel(LLM):
         # TODO(student): Initialize your OpenAI client or chosen LLM provider here.
         self.stop_token = stop_token
         self.model_name = model_name
+        self.openai_model = openai_model
 
         if openai_model:
             self._client = OpenAI()
@@ -46,7 +47,16 @@ class OpenAIModel(LLM):
         # Return the raw text including the terminal stop token required by the parser.
 
         try:
-            response = self._client.responses.create(model="gpt-5", input=prompt)
-            return response.output_text
+            if self.openai_model:
+                response = self._client.responses.create(model="gpt-5", input=prompt).output_text
+            else:
+                response = self._client.generate(prompt)[0].outputs[0].text
+
+            return response
         except Exception as e:
             raise RuntimeError(f"Failed to generate from OpenAI model: {e}")
+
+
+if __name__ == "__main__":
+    model = OpenAIModel("oops", model_name="/u/shawntan/proj/mayank/lm-engine/Qwen1.5-MoE-A2.7B", openai_model=False)
+    print(model.generate("Hi, I am Mayank"))
