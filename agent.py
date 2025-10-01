@@ -57,8 +57,32 @@ class ReactAgent:
         The message must include fields: role, content, timestamp, unique_id, parent, children.
         Maintain a pointer to the current node and the root node.
         """
-        # TODO(student): Implement message tree creation and linking.
-        raise NotImplementedError("add_message must be implemented by the student")
+
+        message_id = len(self.id_to_message)
+        timestamp = time.time()
+
+        parent_id = self.current_message_id if self.current_message_id != -1 else None
+
+        message = {
+            "role": role,
+            "content": content,
+            "timestamp": timestamp,
+            "unique_id": message_id,
+            "parent": parent_id,
+            "children": [],
+        }
+
+        self.id_to_message.append(message)
+
+        # Link to parent if exists
+        if parent_id is None:
+            self.root_message_id = message_id
+        else:
+            self.id_to_message[parent_id]["children"].append(message_id)
+
+        self.current_message_id = message_id
+
+        return message_id
 
     def set_message_content(self, message_id: int, content: str) -> None:
         """Update message content by id."""
