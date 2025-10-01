@@ -16,6 +16,7 @@ from typing import List, Callable, Dict, Any
 from response_parser import ResponseParser
 from llm import LLM, OpenAIModel
 import inspect
+import time
 
 class ReactAgent:
     """
@@ -91,7 +92,7 @@ class ReactAgent:
         Returns:
             The result passed as an argument.  The result is then returned by the agent's run method.
         """
-        return result 
+        return result
 
     def add_instructions_and_backtrack(self, instructions: str, at_message_id: int):
         """
