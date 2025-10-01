@@ -1,4 +1,11 @@
 from abc import ABC, abstractmethod
+from openai import OpenAI
+
+
+try:
+    from vllm import LLM as VLLM
+except:
+    pass
 
 
 class LLM(ABC):
@@ -22,13 +29,24 @@ class OpenAIModel(LLM):
     format required by ResponseParser and include the stop token in the output string.
     """
 
-    def __init__(self, stop_token: str, model_name: str = "gpt-5-mini"):
+    def __init__(self, stop_token: str, model_name: str = "gpt-5-mini", openai_model: bool = True):
         # TODO(student): Initialize your OpenAI client or chosen LLM provider here.
         self.stop_token = stop_token
         self.model_name = model_name
-        raise NotImplementedError("OpenAIModel.__init__ must be implemented by the student")
+
+        if openai_model:
+            self._client = OpenAI()
+        else:
+            self._client = VLLM(model_name)
+
+        # raise NotImplementedError("OpenAIModel.__init__ must be implemented by the student")
 
     def generate(self, prompt: str) -> str:
         # TODO(student): Call the model, obtain text, and ensure the stop token is present.
         # Return the raw text including the terminal stop token required by the parser.
-        raise NotImplementedError("OpenAIModel.generate must be implemented by the student")
+
+        try:
+            response = self._client.responses.create(model="gpt-5", input=prompt)
+            return response.output_text
+        except Exception as e:
+            raise RuntimeError(f"Failed to generate from OpenAI model: {e}")
