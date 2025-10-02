@@ -178,8 +178,8 @@ class ReactAgent:
                 response = self.llm.generate(context)
                 self.set_message_content(id, response)
 
-                print(self.get_context())
-                print("*" * 100)
+                # print(self.get_context())
+                # print("*" * 100)
 
                 # print(response)
 #                 if step == 0:
@@ -201,6 +201,11 @@ class ReactAgent:
                 parsed = self.parser.parse(response)
                 # print(parsed)
                 # print("*" * 100)
+                # print()
+                # print()
+                # print()
+                # print()
+                # print()
                 
                 # Add the LLM response to the tree
                 self.add_message("assistant", response)
