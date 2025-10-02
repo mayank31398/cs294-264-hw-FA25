@@ -2,6 +2,11 @@ from abc import ABC, abstractmethod
 import os
 from openai import OpenAI
 
+try:
+    from vllm import LLM as VLLM
+except ImportError:
+    pass
+
 
 class LLM(ABC):
     """Abstract base class for Large Language Models."""
@@ -24,24 +29,31 @@ class OpenAIModel(LLM):
     format required by ResponseParser and include the stop token in the output string.
     """
 
-    def __init__(self, stop_token: str, model_name: str = "gpt-5-mini"):
-        # Initialize OpenAI client
-        self.client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+    def __init__(self, stop_token: str, model_name: str = "gpt-5-mini", openai_model: bool = True):
         self.stop_token = stop_token
         self.model_name = model_name
+        self.openai_model = openai_model
+
+        if openai_model:
+            self.client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+        else:
+            self.client = VLLM(model_name)
 
     def generate(self, prompt: str) -> str:
-        # Call the model and obtain text
-        response = self.client.chat.completions.create(
-            model=self.model_name,
-            messages=[{"role": "user", "content": prompt}],
-            stop=[self.stop_token],
-            temperature=0.0
-        )
-        
-        # Get the text content and ensure stop token is present
-        text = response.choices[0].message.content
+        if self.openai_model:
+            response = self.client.chat.completions.create(
+                model=self.model_name,
+                messages=[{"role": "user", "content": prompt}],
+                stop=[self.stop_token],
+                # temperature=0.0
+            )
+            
+            # Get the text content and ensure stop token is present
+            text = response.choices[0].message.content
+        else:
+            text = self._client.generate(prompt)[0].outputs[0].text
+
         if text and not text.endswith(self.stop_token):
             text += self.stop_token
-        
+
         return text
