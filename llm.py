@@ -4,6 +4,7 @@ from openai import OpenAI
 
 try:
     from vllm import LLM as VLLM
+    from vllm import SamplingParams
 except ImportError:
     pass
 
@@ -51,7 +52,7 @@ class OpenAIModel(LLM):
             # Get the text content and ensure stop token is present
             text = response.choices[0].message.content
         else:
-            text = self.client.generate(prompt)[0].outputs[0].text
+            text = self.client.generate(prompt, sampling_params=SamplingParams(temperature=0.1))[0].outputs[0].text
 
         if text and not text.endswith(self.stop_token):
             text += self.stop_token
