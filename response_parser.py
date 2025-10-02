@@ -53,20 +53,17 @@ arg2_value (can be multiline)
         parts = call_content.split(self.ARG_SEP)
         if len(parts) < 1:
             raise ValueError("No function name found in function call")
-        
+
         # First part is the function name
         function_name = parts[0].strip()
-        
+        parts = parts[1:]
+
         # Parse arguments (name-value pairs)
         arguments = {}
-        for i in range(1, len(parts), 2):
-            if i + 1 < len(parts):
-                arg_name = parts[i].strip()
-                arg_value = parts[i + 1].strip()
-                arguments[arg_name] = arg_value
-            else:
-                # Odd number of parts after function name, malformed
-                raise ValueError("Malformed arguments in function call")
+        for i in range(len(parts)):
+            arg_value = parts[i].strip()
+            arg, value = arg_value.split("\n")
+            arguments[arg] = value
         
         return {
             "thought": thought,

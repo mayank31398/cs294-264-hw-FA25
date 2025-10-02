@@ -41,10 +41,10 @@ class ReactAgent:
 
         # Set up the initial structure of the history
         # Create required root nodes and a user node (task) and an instruction node.
-        self.system_message_id = self.add_message("system", "You are a Smart ReAct agent.")
+        self.system_message_id = self.add_message("system", "You are a Smart ReAct agent. If the specified task is completed, call the finish function.")
         self.user_message_id = self.add_message("user", "")
-        self.instructions_message_id = self.add_message("instructor", "")
-        
+        self.assistant_message_id = self.add_message("assistant", "")
+
         # NOTE: mandatory finish function that terminates the agent
         self.add_functions([self.finish])
 
@@ -132,7 +132,7 @@ class ReactAgent:
             if current_id >= len(self.id_to_message):
                 break
         
-        return "\n\n".join(context_parts)
+        return "\n\n".join(context_parts).strip()
 
     def _get_tool_descriptions(self) -> str:
         """Generate tool descriptions for the system prompt."""
@@ -214,17 +214,35 @@ class ReactAgent:
             try:
                 # Build context from the message tree
                 context = self.get_context()
+                print(context)
                 
                 # Query the LLM
                 response = self.llm.generate(context)
+                print(response)
+                print("--------------------------------")
+    #             response = """To show the contents of all files in the current directory, I will execute the command `cat *`. This will display the contents of all files in the current directory. 
+
+    # Let's execute the command and retrieve the output. 
+
+    # ----BEGIN_FUNCTION_CALL----
+    # execute
+    # ----ARG----
+    # command
+    # ls
+    # ----END_FUNCTION_CALL----"""
                 
                 # Add assistant message
-                assistant_id = self.add_message("assistant", response)
+                self.set_message_content(self.assistant_message_id, response)
                 
                 # Parse the function call
                 parsed = self.parser.parse(response)
+                print(parsed)
                 function_name = parsed["name"]
                 arguments = parsed["arguments"]
+
+                # If finish is called, return the result
+                if function_name == "finish":
+                    return result
                 
                 # Execute the tool
                 if function_name in self.function_map:
@@ -239,11 +257,7 @@ class ReactAgent:
                 
                 # Add tool result to the tree
                 self.add_message("tool", tool_result)
-                
-                # If finish is called, return the result
-                if function_name == "finish":
-                    return result
-                    
+                self.add_message("assistant", "")
             except Exception as e:
                 # Add error message and continue
                 error_msg = f"Error in step {step}: {str(e)}"
@@ -260,8 +274,8 @@ def main():
 
     env = DumbEnvironment()
     dumb_agent = ReactAgent("dumb-agent", parser, llm)
-    dumb_agent.add_functions([env.run_bash_cmd])
-    result = dumb_agent.run("Show the contents of all files in the current directory.", max_steps=10)
+    dumb_agent.add_functions([env.execute])
+    result = dumb_agent.run("Show the all files in the current directory.", max_steps=4)
     print(result)
 
 if __name__ == "__main__":
