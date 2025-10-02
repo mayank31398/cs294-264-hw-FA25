@@ -292,7 +292,7 @@ def main():
     env = DumbEnvironment()
     dumb_agent = ReactAgent("dumb-agent", parser, llm)
     dumb_agent.add_functions([env.execute])
-    result = dumb_agent.run("Show the contents of all files in the current directory.", max_steps=4)
+    result = dumb_agent.run("List all files in the current directory.", max_steps=4)
     print(result)
 
 if __name__ == "__main__":
