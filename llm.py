@@ -51,7 +51,7 @@ class OpenAIModel(LLM):
             # Get the text content and ensure stop token is present
             text = response.choices[0].message.content
         else:
-            text = self._client.generate(prompt)[0].outputs[0].text
+            text = self.client.generate(prompt)[0].outputs[0].text
 
         if text and not text.endswith(self.stop_token):
             text += self.stop_token
