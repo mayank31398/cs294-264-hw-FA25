@@ -44,11 +44,11 @@ class ReactAgent:
         # Set up the initial structure of the history
         # Create required root nodes and a user node (task) and an instruction node.
         self.system_message_id = self.add_message("system", "You are a Smart ReAct agent.")
-        self.user_message_id = self.add_message("user", "")
+        # self.user_message_id = self.add_message("user", "")
         self.instructions_message_id = self.add_message("instructor", "")
         
         # NOTE: mandatory finish function that terminates the agent
-        self.add_functions([self.finish, self.add_instructions_and_backtrack])
+        self.add_functions([self.finish])
 
     # -------------------- MESSAGE TREE --------------------
     def add_message(self, role: str, content: str) -> int:
@@ -165,7 +165,7 @@ class ReactAgent:
             - If `finish` is called, return the final result
         """
         # Set the user prompt
-        self.set_message_content(self.user_message_id, task)
+        self.add_message("user", task)
         
         for step in range(max_steps):
             try:
@@ -173,10 +173,27 @@ class ReactAgent:
                 context = self.get_context()
                 
                 # Query the LLM
+                # print(context)
                 response = self.llm.generate(context)
+                if step == 0:
+                    response = """----BEGIN_FUNCTION_CALL----
+execute
+----ARG----
+command
+ls -la
+----END_FUNCTION_CALL----"""
+                else:
+                    response = """----BEGIN_FUNCTION_CALL----
+finish
+----ARG----
+----END_FUNCTION_CALL----"""
                 
                 # Parse the function call
+                # print("*" * 100)
+                # print(response)
                 parsed = self.parser.parse(response)
+                # print(parsed)
+                # print("*" * 100)
                 
                 # Add the LLM response to the tree
                 self.add_message("assistant", response)
@@ -188,13 +205,12 @@ class ReactAgent:
                 if function_name in self.function_map:
                     tool = self.function_map[function_name]
                     try:
-                        result = tool(**arguments)
-                        # Add tool result to the tree
-                        self.add_message("tool", str(result))
-                        
-                        # If finish is called, return the result
                         if function_name == "finish":
+                            self.add_message("tool", str(result))
                             return result
+                        else:
+                            result = tool(**arguments)
+                            self.add_message("tool", str(result))
                             
                     except Exception as e:
                         error_msg = f"Error executing {function_name}: {str(e)}"
@@ -263,13 +279,13 @@ class ReactAgent:
 
 def main():
     from envs import DumbEnvironment
-    llm = OpenAIModel("----END_FUNCTION_CALL----", "gpt-4o-mini")
+    llm = OpenAIModel("----END_FUNCTION_CALL----", "Qwen3-8B", False)
     parser = ResponseParser()
 
     env = DumbEnvironment()
     dumb_agent = ReactAgent("dumb-agent", parser, llm)
-    dumb_agent.add_functions([env.run_bash_cmd])
-    result = dumb_agent.run("Show the contents of all files in the current directory.", max_steps=10)
+    dumb_agent.add_functions([env.execute])
+    result = dumb_agent.run("Show the contents of all files in the current directory.", max_steps=4)
     print(result)
 
 if __name__ == "__main__":
