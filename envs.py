@@ -55,13 +55,32 @@ class SWEEnvironment:
         """
         [Optional] Replace the content of the file from the given line to the given line with the given content
         """
-        raise NotImplementedError("replace_in_file must be implemented by the student")
+        try:
+            # Read the file
+            with open(file_path, 'r') as f:
+                lines = f.readlines()
+            
+            # Replace the specified lines
+            lines[from_line-1:to_line] = [content + '\n']
+            
+            # Write back to file
+            with open(file_path, 'w') as f:
+                f.writelines(lines)
+            
+            return f"Successfully replaced lines {from_line}-{to_line} in {file_path}"
+        except Exception as e:
+            return f"Error replacing content in {file_path}: {str(e)}"
     
     def show_file(self, file_path: str) -> str:
         """
         [Optional]Show the content of the file
         """
-        raise NotImplementedError("show_file must be implemented by the student")
+        try:
+            with open(file_path, 'r') as f:
+                content = f.read()
+            return f"Content of {file_path}:\n{content}"
+        except Exception as e:
+            return f"Error reading {file_path}: {str(e)}"
 
 class DumbEnvironment:
     """
