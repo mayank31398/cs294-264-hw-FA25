@@ -43,10 +43,7 @@ class OpenAIModel(LLM):
     def generate(self, prompt: str) -> str:
         if self.openai_model:
             response = self.client.chat.completions.create(
-                model=self.model_name,
-                messages=[{"role": "user", "content": prompt}],
-                stop=[self.stop_token],
-                temperature=0.1
+                model=self.model_name, messages=[{"role": "user", "content": prompt}]
             )
             
             # Get the text content and ensure stop token is present
