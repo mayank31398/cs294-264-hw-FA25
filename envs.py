@@ -1,4 +1,3 @@
-from utils import get_sb_environment
 import subprocess
 
 class LimitsExceeded(Exception):
@@ -14,6 +13,7 @@ class SWEEnvironment:
     """
 
     def __init__(self, instance: dict):
+        from utils import get_sb_environment
         self.env = get_sb_environment(instance)
      
     # -------------------- REQUIRED TOOLS --------------------

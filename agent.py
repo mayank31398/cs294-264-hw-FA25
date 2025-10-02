@@ -166,15 +166,21 @@ class ReactAgent:
         """
         # Set the user prompt
         self.add_message("user", task)
-        
+
         for step in range(max_steps):
             try:
                 # Build context from the message tree
+                id = self.add_message("assistant", "")
                 context = self.get_context()
                 
                 # Query the LLM
                 # print(context)
                 response = self.llm.generate(context)
+                self.set_message_content(id, response)
+
+                print(self.get_context())
+                print("*" * 100)
+
                 # print(response)
 #                 if step == 0:
 #                     response = """----BEGIN_FUNCTION_CALL----
@@ -280,7 +286,7 @@ class ReactAgent:
 
 def main():
     from envs import DumbEnvironment
-    llm = OpenAIModel("----END_FUNCTION_CALL----", "Qwen3-8B", False)
+    llm = OpenAIModel("----END_FUNCTION_CALL----", "gpt-5-mini", True)
     parser = ResponseParser()
 
     env = DumbEnvironment()

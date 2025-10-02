@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
 import os
-from openai import OpenAI
 
 try:
     from vllm import LLM as VLLM
@@ -36,6 +35,7 @@ class OpenAIModel(LLM):
         self.openai_model = openai_model
 
         if openai_model:
+            from openai import OpenAI
             self.client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
         else:
             self.client = VLLM(model_name)
