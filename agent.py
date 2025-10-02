@@ -213,8 +213,8 @@ class ReactAgent:
                     tool = self.function_map[function_name]
                     try:
                         if function_name == "finish":
-                            self.add_message("tool", str(result))
-                            return result
+                            self.add_message("tool", str(**arguments))
+                            return arguments
                         else:
                             result = tool(**arguments)
                             self.add_message("tool", str(result))
