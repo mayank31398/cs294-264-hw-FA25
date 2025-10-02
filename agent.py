@@ -175,18 +175,19 @@ class ReactAgent:
                 # Query the LLM
                 # print(context)
                 response = self.llm.generate(context)
-                if step == 0:
-                    response = """----BEGIN_FUNCTION_CALL----
-execute
-----ARG----
-command
-ls -la
-----END_FUNCTION_CALL----"""
-                else:
-                    response = """----BEGIN_FUNCTION_CALL----
-finish
-----ARG----
-----END_FUNCTION_CALL----"""
+                # print(response)
+#                 if step == 0:
+#                     response = """----BEGIN_FUNCTION_CALL----
+# execute
+# ----ARG----
+# command
+# ls -la
+# ----END_FUNCTION_CALL----"""
+#                 else:
+#                     response = """----BEGIN_FUNCTION_CALL----
+# finish
+# ----ARG----
+# ----END_FUNCTION_CALL----"""
                 
                 # Parse the function call
                 # print("*" * 100)
