@@ -33,11 +33,48 @@ arg2_value (can be multiline)
 
         Returns a dictionary: {"thought": str, "name": str, "arguments": dict}
         """
-        # TODO(student): Implement rfind-based parsing per the assignment description.
-        # Hints:
-        # - Find END_CALL via rfind; then find the matching BEGIN_CALL before it via rfind
-        # - Everything before BEGIN_CALL is the model's thought
-        # - Between BEGIN_CALL and END_CALL: first block is function name, subsequent blocks
-        #   are argument name/value pairs separated by ARG_SEP, values may be multiline
-        # - Raise ValueError on malformed inputs
-        raise NotImplementedError("ResponseParser.parse must be implemented by the student")
+        # Find the last occurrence of END_CALL
+        end_pos = text.rfind(self.END_CALL)
+        if end_pos == -1:
+            raise ValueError("No END_FUNCTION_CALL marker found")
+        
+        # Find the matching BEGIN_CALL before the END_CALL
+        begin_pos = text.rfind(self.BEGIN_CALL, 0, end_pos)
+        if begin_pos == -1:
+            raise ValueError("No BEGIN_FUNCTION_CALL marker found before END_FUNCTION_CALL")
+        
+        # Extract thought (everything before BEGIN_CALL)
+        thought = text[:begin_pos].strip()
+        
+        # Extract function call content (between BEGIN_CALL and END_CALL)
+        call_content = text[begin_pos + len(self.BEGIN_CALL):end_pos].strip()
+        
+        # Split by ARG_SEP to get function name and arguments
+        parts = call_content.split(self.ARG_SEP)
+        if len(parts) < 1:
+            raise ValueError("No function name found in function call")
+        
+        # First part is the function name
+        function_name = parts[0].strip()
+        
+        # Parse arguments
+        arguments = {}
+        for i in range(1, len(parts)):
+            arg_part = parts[i].strip()
+            if not arg_part:
+                continue
+                
+            # Split on first newline to separate arg name from value
+            lines = arg_part.split('\n', 1)
+            if len(lines) < 2:
+                raise ValueError(f"Malformed argument in part {i}: {arg_part}")
+            
+            arg_name = lines[0].strip()
+            arg_value = lines[1].strip()
+            arguments[arg_name] = arg_value
+        
+        return {
+            "thought": thought,
+            "name": function_name,
+            "arguments": arguments
+        }

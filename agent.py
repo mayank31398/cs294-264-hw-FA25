@@ -12,6 +12,8 @@ clear specifications and TODOs.
 """
 
 from typing import List, Callable, Dict, Any
+import time
+import yaml
 
 from response_parser import ResponseParser
 from llm import LLM, OpenAIModel
@@ -46,7 +48,7 @@ class ReactAgent:
         self.instructions_message_id = self.add_message("instructor", "")
         
         # NOTE: mandatory finish function that terminates the agent
-        self.add_functions([self.finish])
+        self.add_functions([self.finish, self.add_instructions_and_backtrack])
 
     # -------------------- MESSAGE TREE --------------------
     def add_message(self, role: str, content: str) -> int:
@@ -56,20 +58,55 @@ class ReactAgent:
         The message must include fields: role, content, timestamp, unique_id, parent, children.
         Maintain a pointer to the current node and the root node.
         """
-        # TODO(student): Implement message tree creation and linking.
-        raise NotImplementedError("add_message must be implemented by the student")
+        message_id = len(self.id_to_message)
+        message = {
+            "role": role,
+            "content": content,
+            "timestamp": int(time.time()),
+            "unique_id": message_id,
+            "parent": self.current_message_id if self.current_message_id != -1 else None,
+            "children": []
+        }
+        
+        # Add to the list
+        self.id_to_message.append(message)
+        
+        # Update parent's children if not root
+        if self.current_message_id != -1:
+            self.id_to_message[self.current_message_id]["children"].append(message_id)
+        
+        # Update current message id
+        self.current_message_id = message_id
+        
+        # Set root message id if this is the first message
+        if self.root_message_id == -1:
+            self.root_message_id = message_id
+            
+        return message_id
 
     def set_message_content(self, message_id: int, content: str) -> None:
         """Update message content by id."""
-        # TODO(student): Implement message content update.
-        raise NotImplementedError("set_message_content must be implemented by the student")
+        if 0 <= message_id < len(self.id_to_message):
+            self.id_to_message[message_id]["content"] = content
+        else:
+            raise ValueError(f"Invalid message_id: {message_id}")
 
     def get_context(self) -> str:
         """
         Build the full LLM context by walking from the root to the current message.
         """
-        # TODO(student): Implement context construction.
-        raise NotImplementedError("get_context must be implemented by the student")
+        if self.current_message_id == -1:
+            return ""
+        
+        # Build context by including all messages from root to current
+        context_parts = []
+        
+        # Add all messages in order (simplified approach)
+        for i in range(len(self.id_to_message)):
+            if i <= self.current_message_id:
+                context_parts.append(self.message_id_to_context(i))
+            
+        return "\n".join(context_parts)
 
     # -------------------- REQUIRED TOOLS --------------------
     def add_functions(self, tools: List[Callable]):
@@ -80,8 +117,8 @@ class ReactAgent:
         - The signature of each tool
         - The docstring of each tool
         """
-        # TODO(student): Register tools and construct tool descriptions for the system prompt.
-        raise NotImplementedError("add_functions must be implemented by the student")
+        for tool in tools:
+            self.function_map[tool.__name__] = tool
     
     def finish(self, result: str):
         """The agent must call this function with the final result when it has solved the given task. The function calls "git add -A and git diff --cached" to generate a patch and returns the patch as submission.
@@ -104,8 +141,15 @@ class ReactAgent:
 
         Returns a short success string.
         """
-        # TODO(student): Implement instruction update and backtracking logic.
-        raise NotImplementedError("add_instructions_and_backtrack must be implemented by the student")
+        # Update the instructions message content
+        self.set_message_content(self.instructions_message_id, instructions)
+        
+        # Backtrack to the specified message id
+        if 0 <= at_message_id < len(self.id_to_message):
+            self.current_message_id = at_message_id
+            return f"Successfully updated instructions and backtracked to message {at_message_id}"
+        else:
+            return f"Error: Invalid message_id {at_message_id} for backtracking"
 
     # -------------------- MAIN LOOP --------------------
     def run(self, task: str, max_steps: int) -> str:
@@ -120,8 +164,76 @@ class ReactAgent:
             - Append tool result to the tree
             - If `finish` is called, return the final result
         """
-        # TODO(student): Implement the Reason-Act loop per the assignment, including error handling.
-        raise NotImplementedError("run must be implemented by the student")
+        # Set the user prompt
+        self.set_message_content(self.user_message_id, task)
+        
+        for step in range(max_steps):
+            try:
+                # Build context from the message tree
+                context = self.get_context()
+                
+                # Query the LLM
+                response = self.llm.generate(context)
+                
+                # Parse the function call
+                parsed = self.parser.parse(response)
+                
+                # Add the LLM response to the tree
+                self.add_message("assistant", response)
+                
+                # Execute the tool
+                function_name = parsed["name"]
+                arguments = parsed["arguments"]
+                
+                if function_name in self.function_map:
+                    tool = self.function_map[function_name]
+                    try:
+                        result = tool(**arguments)
+                        # Add tool result to the tree
+                        self.add_message("tool", str(result))
+                        
+                        # If finish is called, return the result
+                        if function_name == "finish":
+                            return result
+                            
+                    except Exception as e:
+                        error_msg = f"Error executing {function_name}: {str(e)}"
+                        self.add_message("tool", error_msg)
+                else:
+                    error_msg = f"Unknown function: {function_name}"
+                    self.add_message("tool", error_msg)
+                    
+            except Exception as e:
+                error_msg = f"Error in step {step}: {str(e)}"
+                self.add_message("system", error_msg)
+                
+        # If we reach here, we've exceeded max steps
+        return "Maximum steps exceeded without completion"
+    
+    def set_user_prompt(self, user_prompt: str):
+        """Set the user prompt content."""
+        self.set_message_content(self.user_message_id, user_prompt)
+    
+    def get_instructions(self) -> str:
+        """Get the current instructions."""
+        return self.id_to_message[self.instructions_message_id]["content"]
+    
+    def set_instructions(self, instructions: str):
+        """Set the instructions content."""
+        self.set_message_content(self.instructions_message_id, instructions)
+    
+    def save_history(self, file_name: str):
+        """Save the agent's attributes as a YAML file."""
+        data = {
+            "name": self.name,
+            "timestamp": int(time.time()),
+            "id_to_message": self.id_to_message,
+            "root_message_id": self.root_message_id,
+            "current_message_id": self.current_message_id,
+            "function_map": {name: func.__name__ for name, func in self.function_map.items()}
+        }
+        with open(file_name, 'w') as f:
+            yaml.dump(data, f, default_flow_style=False)
 
     def message_id_to_context(self, message_id: int) -> str:
         """
