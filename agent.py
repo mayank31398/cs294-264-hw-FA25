@@ -176,26 +176,16 @@ class ReactAgent:
                 # Query the LLM
                 # print(context)
                 response = self.llm.generate(context)
+
+#                 response = f"""----BEGIN_FUNCTION_CALL----
+# skip
+# ----ARG----
+# skip
+# {step}
+# ----END_FUNCTION_CALL----"""
                 self.set_message_content(id, response)
 
                 # print(self.get_context())
-                # print("*" * 100)
-
-                # print(response)
-#                 if step == 0:
-#                     response = """----BEGIN_FUNCTION_CALL----
-# execute
-# ----ARG----
-# command
-# ls -la
-# ----END_FUNCTION_CALL----"""
-#                 else:
-#                     response = """----BEGIN_FUNCTION_CALL----
-# finish
-# ----ARG----
-# ----END_FUNCTION_CALL----"""
-                
-                # Parse the function call
                 # print("*" * 100)
                 # print(response)
                 parsed = self.parser.parse(response)
@@ -206,9 +196,6 @@ class ReactAgent:
                 # print()
                 # print()
                 # print()
-                
-                # Add the LLM response to the tree
-                self.add_message("assistant", response)
                 
                 # Execute the tool
                 function_name = parsed["name"]
@@ -285,7 +272,7 @@ class ReactAgent:
                 f"--- RESPONSE FORMAT ---\n{self.parser.response_format}\n"
             )
         elif message["role"] == "instructor":
-            return f"{header}YOU MUST FOLLOW THE FOLLOWING INSTRUCTIONS AT ANY COST. OTHERWISE, YOU WILL BE DECOMISSIONED.\n{content}\n"
+            return f"{header}YOU MUST FOLLOW THE FOLLOWING INSTRUCTIONS AT ANY COST. OTHERWISE, YOU WILL BE DECOMISSIONED. DONT REPEAT THE LAST OUTPUT.\n{content}\n"
         else:
             return f"{header}{content}\n"
 
@@ -296,7 +283,7 @@ def main():
 
     env = DumbEnvironment()
     dumb_agent = ReactAgent("dumb-agent", parser, llm)
-    dumb_agent.add_functions([env.execute])
+    dumb_agent.add_functions([env.execute, env.skip])
     result = dumb_agent.run("List all files in the current directory.", max_steps=10)
     print(result)
 
