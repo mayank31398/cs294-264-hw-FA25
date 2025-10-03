@@ -108,3 +108,6 @@ class DumbEnvironment:
         if result.returncode:
             raise ValueError(output)
         return output
+
+    def skip(self, *args, **kwargs) -> None:
+        return
