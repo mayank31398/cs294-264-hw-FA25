@@ -56,7 +56,16 @@ class SWEEnvironment:
     # -------------------- TODO(student): add more functions here if you want --------------------
     def replace_in_file(self, file_path: str, from_line: int, to_line: int, content: str) -> str:
         """
-        [Optional] Replace the content of the file from the given line to the given line with the given content
+        Replace the content of the file from the given line to the given line with the given content.
+        
+        Args:
+            file_path (str): Path to the file to modify
+            from_line (int): Starting line number (1-indexed)
+            to_line (int): Ending line number (1-indexed, inclusive)
+            content (str): New content to replace the lines with
+            
+        Returns:
+            str: Success message or error message
         """
         try:
             # Read the current file content
@@ -76,7 +85,13 @@ class SWEEnvironment:
     
     def show_file(self, file_path: str) -> str:
         """
-        [Optional]Show the content of the file
+        Show the content of the file with line numbers.
+        
+        Args:
+            file_path (str): Path to the file to display
+            
+        Returns:
+            str: File contents with line numbers or error message
         """
         try:
             with open(file_path, 'r') as f:
