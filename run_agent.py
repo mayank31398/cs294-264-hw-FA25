@@ -92,7 +92,7 @@ def main(
 
     dataset_path = DATASET_MAPPING.get(subset, subset)
     print(f"Loading dataset {dataset_path}, split {split}...")
-    instances = list(load_dataset(dataset_path, split=split))
+    instances = list(load_dataset(dataset_path, split=split))[:1]
     print(f"Running on {len(instances)} instances...")
 
     def process_futures(futures: dict[concurrent.futures.Future, str]):

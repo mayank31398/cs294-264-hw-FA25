@@ -1,4 +1,5 @@
 import subprocess
+import os
 
 class LimitsExceeded(Exception):
     """Raised when the agent has reached its step limit."""
@@ -29,7 +30,7 @@ class SWEEnvironment:
             The output of running the shell command
         """
         try:
-            output = self.env.execute(command)
+            output = self.env.execute(command)["output"]
         except subprocess.TimeoutExpired as e:
             output = e.output.decode("utf-8", errors="replace") if e.output else ""
             raise ValueError(output)
@@ -42,9 +43,7 @@ class SWEEnvironment:
         Generate a patch from the result (for SWE-Bench)
         """
         try:
-            patch_output = self.env.execute("git add -A && git diff --cached")
-            if isinstance(patch_output, dict):
-                patch_output = patch_output["output"]
+            patch_output = self.env.execute("git add -A && git diff --cached")["output"]
 
             if patch_output.strip():
                 return patch_output
@@ -73,10 +72,11 @@ class SWEEnvironment:
             
             # Use sed to replace the lines in the container
             cmd = f"sed -i '{from_line},{to_line}c\\{escaped_content}' {file_path}"
-            self.env.execute(cmd)
+            self.env.execute(cmd)["output"]
             
             return f"Successfully replaced lines {from_line}-{to_line} in {file_path}"
         except Exception as e:
+            print(f"OMG: {os.listdir("./")}")
             return f"Error replacing content in {file_path}: {str(e)}"
     
     def show_file(self, file_path: str, start_line: int = 1, num_lines: int = -1) -> str:
@@ -92,8 +92,11 @@ class SWEEnvironment:
             str: File contents with line numbers or error message
         """
         try:
+            start_line = int(start_line)
+            num_lines = int(num_lines)
+
             # Get total lines first
-            total_lines_output = self.env.execute(f"wc -l < {file_path}").strip()
+            total_lines_output = self.env.execute(f"wc -l < {file_path}")["output"].strip()
             total_lines = int(total_lines_output) if total_lines_output else 0
             
             # Calculate range
@@ -104,11 +107,12 @@ class SWEEnvironment:
             
             # Use awk to add line numbers and extract the range
             cmd = f"awk 'NR>={start_line} && NR<={end_line} {{printf \"%4d|%s\\n\", NR, $0}}' {file_path}"
-            numbered_content = self.env.execute(cmd)
+            numbered_content = self.env.execute(cmd)["output"]
             
             header = f"Contents of {file_path} (lines {start_line}-{end_line} of {total_lines}):\n"
             return header + numbered_content
         except Exception as e:
+            print(f"XD: {os.listdir("./")}")
             return f"Error reading file {file_path}: {str(e)}"
     
     def find_in_file(self, file_path: str, search_string: str) -> str:
@@ -128,7 +132,7 @@ class SWEEnvironment:
             
             # Use grep with line numbers
             cmd = f'grep -n "{escaped_search}" {file_path} || true'
-            output = self.env.execute(cmd)
+            output = self.env.execute(cmd)["output"]
             
             if output.strip():
                 # Format output with padding like before
@@ -142,8 +146,10 @@ class SWEEnvironment:
                         formatted.append(f"{int(line_num):4d}|{content}\n")
                 return f"Found '{search_string}' in {file_path}:\n" + "".join(formatted)
             else:
+                print(f"ROFL: {os.listdir("./")}")
                 return f"No matches found for '{search_string}' in {file_path}"
         except Exception as e:
+            print(f"KEKW: {os.listdir("./")}")
             return f"Error searching file {file_path}: {str(e)}"
     
     def write_file(self, file_path: str, content: str) -> str:
