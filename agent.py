@@ -11,6 +11,7 @@ This file intentionally omits core implementations and replaces them with
 clear specifications and TODOs.
 """
 
+import os
 from typing import List, Callable, Dict, Any
 import time
 import yaml
@@ -82,7 +83,7 @@ IMPORTANT GUIDELINES:
         message = {
             "role": role,
             "content": content,
-            "timestamp": int(time.time()),
+            "timestamp": time.time(),
             "unique_id": message_id,
             "parent": self.current_message_id if self.current_message_id != -1 else None,
             "children": []
@@ -168,17 +169,17 @@ IMPORTANT GUIDELINES:
 
         Returns a short success string.
         """
-        # Update the instructions message content
+        # Validate the message id FIRST before making any changes
+        if not (0 <= at_message_id < len(self.id_to_message)):
+            raise ValueError(f"Invalid message_id {at_message_id} for backtracking (valid range: 0-{len(self.id_to_message)-1})")
+        
+        # Update the instructions message content only after validation
         self.set_message_content(self.instructions_message_id, instructions)
         
-        # Validate the message id
-        if 0 <= at_message_id < len(self.id_to_message):
-            return f"Successfully updated instructions. Will backtrack to message {at_message_id}"
-        else:
-            return f"Error: Invalid message_id {at_message_id} for backtracking"
+        return f"Successfully updated instructions. Will backtrack to message {at_message_id}"
 
     # -------------------- MAIN LOOP --------------------
-    def run(self, task: str, max_steps: int) -> str:
+    def run(self, task: str, instance_id: str, max_steps: int) -> str:
         """
         Run the agent's main ReAct loop:
         - Set the user prompt
@@ -192,28 +193,29 @@ IMPORTANT GUIDELINES:
         """
         # Set the user prompt
         self.set_message_content(self.user_message_id, task)
-
+        
+        os.makedirs("outputs", exist_ok=True)
+        f = open(f"outputs/{instance_id}.txt", "w")
+        
         for step in range(max_steps):
             try:
                 # Build context from the message tree
                 assistant_id = self.add_message("assistant", "")
                 context = self.get_context()
-                
-                # Query the LLM
+
+                # print(step)
                 response = self.llm.generate(context)
+
+                # print(response)
                 self.set_message_content(assistant_id, response)
 
                 print(self.get_context())
-                print("*" * 100)
-                print(response)
+                f.write(self.get_context() + "\n")
+                f.write("*" * 100 + "\n")
+                f.write(response + "\n")
                 parsed = self.parser.parse(response)
-                print(parsed)
-                print("*" * 100)
-                print()
-                print()
-                print()
-                print()
-                print()
+                f.write(str(parsed) + "\n")
+                f.write("*" * 100 + "\n\n\n\n\n")
                 
                 # Execute the tool
                 function_name = parsed["name"]
@@ -232,13 +234,9 @@ IMPORTANT GUIDELINES:
                             self.add_message("tool", str(result))
                             # Now actually perform the backtracking
                             # The backtrack target is in arguments["at_message_id"]
-                            try:
-                                backtrack_target = int(arguments.get("at_message_id", self.current_message_id))
-                                if 0 <= backtrack_target < len(self.id_to_message):
-                                    self.current_message_id = backtrack_target
-                                    print(f">>> Backtracked to message {backtrack_target}")
-                            except (ValueError, TypeError) as e:
-                                print(f">>> Backtracking failed: invalid message_id: {e}")
+                            backtrack_target = int(arguments["at_message_id"])
+                            self.current_message_id = backtrack_target
+                            print(f">>> Backtracked to message {backtrack_target}")
                         else:
                             result = tool(**arguments)
                             self.add_message("tool", str(result))
@@ -304,7 +302,7 @@ IMPORTANT GUIDELINES:
                 f"--- RESPONSE FORMAT ---\n{self.parser.response_format}\n"
             )
         elif message["role"] == "instructor":
-            return f"{header}YOU MUST FOLLOW THE FOLLOWING INSTRUCTIONS AT ANY COST. OTHERWISE, YOU WILL BE DECOMISSIONED. DONT REPEAT THE LAST OUTPUT.\n{content}\n"
+            return f"{header}YOU MUST FOLLOW THE FOLLOWING INSTRUCTIONS AT ANY COST. OTHERWISE, YOU WILL BE DECOMISSIONED.\n{content}\n"
         else:
             return f"{header}{content}\n"
 
@@ -316,7 +314,7 @@ def main():
     env = DumbEnvironment()
     dumb_agent = ReactAgent("dumb-agent", parser, llm)
     dumb_agent.add_functions([env.execute, env.skip])
-    result = dumb_agent.run("List all files in the current directory.", max_steps=10)
+    result = dumb_agent.run("List all files in the current directory.", "dumb", max_steps=10)
     print(result)
 
 if __name__ == "__main__":

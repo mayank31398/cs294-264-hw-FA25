@@ -54,11 +54,11 @@ def process_instance(
             env.replace_in_file, 
             env.show_file,
             env.find_in_file,
-            env.write_file
+            env.write_file,
         ])
         
         # Run the agent
-        output = agent.run(task, max_steps) 
+        output = agent.run(task, instance_id, max_steps) 
         
         # Generate patch for SWE-Bench
         result = env.generate_patch(output)

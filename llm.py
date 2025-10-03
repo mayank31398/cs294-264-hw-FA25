@@ -42,12 +42,10 @@ class OpenAIModel(LLM):
 
     def generate(self, prompt: str) -> str:
         if self.openai_model:
-            response = self.client.chat.completions.create(
-                model=self.model_name, messages=[{"role": "user", "content": prompt}]
-            )
+            response = self.client.responses.create(model=self.model_name, tools=[{"type": "web_search_preview"}], input=prompt)
             
             # Get the text content and ensure stop token is present
-            text = response.choices[0].message.content
+            text = response.output_text
         else:
             text = self.client.generate(prompt, sampling_params=SamplingParams(temperature=0.1))[0].outputs[0].text
 
