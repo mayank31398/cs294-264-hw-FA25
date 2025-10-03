@@ -69,7 +69,7 @@ IMPORTANT GUIDELINES:
         self.instructions_message_id = self.add_message("instructor", "")
         
         # NOTE: mandatory finish function that terminates the agent
-        self.add_functions([self.finish, self.add_instructions_and_backtrack])
+        self.add_functions([self.finish])
 
     # -------------------- MESSAGE TREE --------------------
     def add_message(self, role: str, content: str) -> int:
@@ -225,6 +225,9 @@ IMPORTANT GUIDELINES:
                     tool = self.function_map[function_name]
                     try:
                         if function_name == "finish":
+                            if "git" not in arguments.get("result", ""):
+                                raise ValueError("finish result must be a git diff")
+
                             result = self.finish(str(arguments.get("result", "")))
                             self.add_message("tool", f"Finished with result: {result}")
                             return result
@@ -237,9 +240,9 @@ IMPORTANT GUIDELINES:
                             backtrack_target = int(arguments["at_message_id"])
                             self.current_message_id = backtrack_target
                             print(f">>> Backtracked to message {backtrack_target}")
-                        else:
-                            result = tool(**arguments)
-                            self.add_message("tool", str(result))
+
+                        result = tool(**arguments)
+                        self.add_message("tool", str(result))
                             
                     except Exception as e:
                         error_msg = f"Error executing {function_name}: {str(e)}"

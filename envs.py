@@ -76,7 +76,6 @@ class SWEEnvironment:
             
             return f"Successfully replaced lines {from_line}-{to_line} in {file_path}"
         except Exception as e:
-            print(f"OMG: {os.listdir("./")}")
             return f"Error replacing content in {file_path}: {str(e)}"
     
     def show_file(self, file_path: str, start_line: int = 1, num_lines: int = -1) -> str:
@@ -112,7 +111,6 @@ class SWEEnvironment:
             header = f"Contents of {file_path} (lines {start_line}-{end_line} of {total_lines}):\n"
             return header + numbered_content
         except Exception as e:
-            print(f"XD: {os.listdir("./")}")
             return f"Error reading file {file_path}: {str(e)}"
     
     def find_in_file(self, file_path: str, search_string: str) -> str:
@@ -146,10 +144,8 @@ class SWEEnvironment:
                         formatted.append(f"{int(line_num):4d}|{content}\n")
                 return f"Found '{search_string}' in {file_path}:\n" + "".join(formatted)
             else:
-                print(f"ROFL: {os.listdir("./")}")
                 return f"No matches found for '{search_string}' in {file_path}"
         except Exception as e:
-            print(f"KEKW: {os.listdir("./")}")
             return f"Error searching file {file_path}: {str(e)}"
     
     def write_file(self, file_path: str, content: str) -> str:

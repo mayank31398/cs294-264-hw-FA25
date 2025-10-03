@@ -55,6 +55,7 @@ def process_instance(
             env.show_file,
             env.find_in_file,
             env.write_file,
+            env.generate_patch,
         ])
         
         # Run the agent
@@ -92,7 +93,7 @@ def main(
 
     dataset_path = DATASET_MAPPING.get(subset, subset)
     print(f"Loading dataset {dataset_path}, split {split}...")
-    instances = list(load_dataset(dataset_path, split=split))[:1]
+    instances = list(load_dataset(dataset_path, split=split))
     print(f"Running on {len(instances)} instances...")
 
     def process_futures(futures: dict[concurrent.futures.Future, str]):

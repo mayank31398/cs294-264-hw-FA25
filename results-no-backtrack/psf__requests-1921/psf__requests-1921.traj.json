@@ -1,0 +1,12 @@
+{
+  "info": {
+    "submission": "diff --git a/requests/models.py b/requests/models.py\nindex cd232e6..95ebc72 100644\n--- a/requests/models.py\n+++ b/requests/models.py\n@@ -387,14 +387,19 @@ class PreparedRequest(RequestEncodingMixin, RequestHooksMixin):\n         url = requote_uri(urlunparse([scheme, netloc, path, None, query, fragment]))\n         self.url = url\n \n-    def prepare_headers(self, headers):\n+def prepare_headers(self, headers):\n         \"\"\"Prepares the given HTTP headers.\"\"\"\n \n         if headers:\n-            self.headers = CaseInsensitiveDict((to_native_string(name), value) for name, value in headers.items())\n+            # Filter out any headers explicitly set to None (meaning \"do not send\")\n+            filtered = (\n+                (to_native_string(name), value)\n+                for name, value in headers.items()\n+                if value is not None\n+            )\n+            self.headers = CaseInsensitiveDict(filtered)\n         else:\n             self.headers = CaseInsensitiveDict()\n-\n     def prepare_body(self, data, files):\n         \"\"\"Prepares the given HTTP body data.\"\"\"\n \n",
+    "config": {
+      "agent": "swe-agent",
+      "model": "gpt-5-mini"
+    }
+  },
+  "messages": [],
+  "trajectory_format": "mini-swe-agent-1",
+  "instance_id": "psf__requests-1921"
+}

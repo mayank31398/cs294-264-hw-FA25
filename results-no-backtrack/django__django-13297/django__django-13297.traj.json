@@ -1,0 +1,12 @@
+{
+  "info": {
+    "submission": "diff --git a/django/views/generic/base.py b/django/views/generic/base.py\nindex e69de29..0000000\n--- a/django/views/generic/base.py\n+++ b/django/views/generic/base.py\n@@ -157,8 +157,15 @@\n-class TemplateView(TemplateResponseMixin, ContextMixin, View):\n-    \"\"\"Render a template.\"\"\"\n-    def get(self, request, *args, **kwargs):\n-        # RemovedInDjango40Warning: when the deprecation ends, replace with:\n-        #   context = self.get_context_data()\n-        context_kwargs = _wrap_url_kwargs_with_deprecation_warning(kwargs)\n-        context = self.get_context_data(**context_kwargs)\n-        return self.render_to_response(context)\n+class TemplateView(TemplateResponseMixin, ContextMixin, View):\n+    \"\"\"Render a template.\"\"\"\n+    def get(self, request, *args, **kwargs):\n+        # RemovedInDjango40Warning: when the deprecation ends, replace with:\n+        #   context = self.get_context_data()\n+        # Call get_context_data with the original kwargs (not wrapped) so\n+        # code that expects ordinary types (e.g. ORM lookups) continues to work.\n+        context = self.get_context_data(**kwargs)\n+        # For templates, add deprecated lazy-wrapped URL kwargs into the context\n+        # only if the view didn't override them. This preserves the deprecation\n+        # warnings when templates access URL kwargs via context while avoiding\n+        # breaking code that uses kwargs in Python code (e.g., ORM lookups).\n+        wrapped = _wrap_url_kwargs_with_deprecation_warning(kwargs)\n+        for key, value in wrapped.items():\n+            if key not in context:\n+                context[key] = value\n+        return self.render_to_response(context)\n\nNo changes detected to generate a patch.",
+    "config": {
+      "agent": "swe-agent",
+      "model": "gpt-5-mini"
+    }
+  },
+  "messages": [],
+  "trajectory_format": "mini-swe-agent-1",
+  "instance_id": "django__django-13297"
+}

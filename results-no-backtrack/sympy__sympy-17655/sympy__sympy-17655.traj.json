@@ -1,0 +1,12 @@
+{
+  "info": {
+    "submission": "diff --git a/sympy/geometry/point.py b/sympy/geometry/point.py\n--- a/sympy/geometry/point.py\n+++ b/sympy/geometry/point.py\n@@ -212,13 +212,36 @@\n         try:\n-            s, o = Point._normalize_dimension(self, Point(other, evaluate=False))\n-        except TypeError:\n-            raise GeometryError(\"Don't know how to add {} and a Point object\".format(other))\n-\n-        coords = [simplify(a + b) for a, b in zip(s, o)]\n-        return Point(coords, evaluate=False)\n+            s, o = Point._normalize_dimension(self, Point(other, evaluate=False))\n+        except TypeError:\n+            # Allow scalar * Point (a Mul expression) to be added to a Point.\n+            # For example, sympy.sympify(2.0) * Point(1,1) produces a Mul\n+            # object. Detect such cases and convert to a Point before adding.\n+            from sympy import Mul\n+            if isinstance(other, Mul):\n+                point_arg = None\n+                for arg in other.args:\n+                    if isinstance(arg, Point):\n+                        point_arg = arg\n+                        break\n+                if point_arg is not None:\n+                    # compute the scalar factor (product of other args)\n+                    factor = S.One\n+                    for arg in other.args:\n+                        if arg is not point_arg:\n+                            factor *= arg\n+                    scaled = point_arg * factor\n+                    return self + scaled\n+            raise GeometryError(\"Don't know how to add {} and a Point object\".format(other))\n+\n+        coords = [simplify(a + b) for a, b in zip(s, o)]\n+        return Point(coords, evaluate=False)\n@@ -250,6 +273,13 @@\n         factor = sympify(factor)\n         coords = [simplify(x*factor) for x in self.args]\n         return Point(coords, evaluate=False)\n \n+    def __rmul__(self, factor):\n+        \"\"\"Right multiplication: allow expressions like `factor * Point`.\n+\n+        This makes `sympify(2.0) * point` behave the same as `point * sympify(2.0)`.\n+        \"\"\"\n+        return self.__mul__(factor)\n+\n*** End Patch\n\nNo changes detected to generate a patch.",
+    "config": {
+      "agent": "swe-agent",
+      "model": "gpt-5-mini"
+    }
+  },
+  "messages": [],
+  "trajectory_format": "mini-swe-agent-1",
+  "instance_id": "sympy__sympy-17655"
+}
