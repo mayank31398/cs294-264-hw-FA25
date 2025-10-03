@@ -163,18 +163,17 @@ IMPORTANT GUIDELINES:
         The agent should call this function if it is making too many mistakes or is stuck.
 
         The function changes the content of the instruction node with 'instructions' and
-        backtracks at the node with id 'at_message_id'. Backtracking means the current node
-        pointer moves to the specified node and subsequent context is rebuilt from there.
+        signals that we should backtrack to 'at_message_id'. The actual backtracking happens
+        in the run loop after the tool result is added.
 
         Returns a short success string.
         """
         # Update the instructions message content
         self.set_message_content(self.instructions_message_id, instructions)
         
-        # Backtrack to the specified message id
+        # Validate the message id
         if 0 <= at_message_id < len(self.id_to_message):
-            self.current_message_id = at_message_id
-            return f"Successfully updated instructions and backtracked to message {at_message_id}"
+            return f"Successfully updated instructions. Will backtrack to message {at_message_id}"
         else:
             return f"Error: Invalid message_id {at_message_id} for backtracking"
 
@@ -227,6 +226,19 @@ IMPORTANT GUIDELINES:
                             result = self.finish(str(arguments.get("result", "")))
                             self.add_message("tool", f"Finished with result: {result}")
                             return result
+                        elif function_name == "add_instructions_and_backtrack":
+                            # Special handling for backtracking
+                            result = tool(**arguments)
+                            self.add_message("tool", str(result))
+                            # Now actually perform the backtracking
+                            # The backtrack target is in arguments["at_message_id"]
+                            try:
+                                backtrack_target = int(arguments.get("at_message_id", self.current_message_id))
+                                if 0 <= backtrack_target < len(self.id_to_message):
+                                    self.current_message_id = backtrack_target
+                                    print(f">>> Backtracked to message {backtrack_target}")
+                            except (ValueError, TypeError) as e:
+                                print(f">>> Backtracking failed: invalid message_id: {e}")
                         else:
                             result = tool(**arguments)
                             self.add_message("tool", str(result))

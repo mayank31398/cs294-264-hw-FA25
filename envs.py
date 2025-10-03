@@ -68,16 +68,12 @@ class SWEEnvironment:
             str: Success message or error message
         """
         try:
-            # Read the current file content
-            with open(file_path, 'r') as f:
-                lines = f.readlines()
+            # Escape content for sed - escape backslashes, forward slashes, ampersands, and newlines
+            escaped_content = content.replace('\\', '\\\\').replace('/', '\\/').replace('&', '\\&').replace('\n', '\\n')
             
-            # Replace the specified lines
-            new_lines = lines[:from_line-1] + [content + '\n'] + lines[to_line:]
-            
-            # Write back to file
-            with open(file_path, 'w') as f:
-                f.writelines(new_lines)
+            # Use sed to replace the lines in the container
+            cmd = f"sed -i '{from_line},{to_line}c\\{escaped_content}' {file_path}"
+            self.env.execute(cmd)
             
             return f"Successfully replaced lines {from_line}-{to_line} in {file_path}"
         except Exception as e:
@@ -96,23 +92,22 @@ class SWEEnvironment:
             str: File contents with line numbers or error message
         """
         try:
-            with open(file_path, 'r') as f:
-                lines = f.readlines()
+            # Get total lines first
+            total_lines_output = self.env.execute(f"wc -l < {file_path}").strip()
+            total_lines = int(total_lines_output) if total_lines_output else 0
             
             # Calculate range
             if num_lines == -1:
-                end_line = len(lines)
+                end_line = total_lines
             else:
-                end_line = min(start_line - 1 + num_lines, len(lines))
+                end_line = min(start_line - 1 + num_lines, total_lines)
             
-            # Add line numbers
-            numbered_lines = []
-            for i in range(start_line - 1, end_line):
-                numbered_lines.append(f"{i + 1:4d}|{lines[i]}")
+            # Use awk to add line numbers and extract the range
+            cmd = f"awk 'NR>={start_line} && NR<={end_line} {{printf \"%4d|%s\\n\", NR, $0}}' {file_path}"
+            numbered_content = self.env.execute(cmd)
             
-            total_lines = len(lines)
             header = f"Contents of {file_path} (lines {start_line}-{end_line} of {total_lines}):\n"
-            return header + "".join(numbered_lines)
+            return header + numbered_content
         except Exception as e:
             return f"Error reading file {file_path}: {str(e)}"
     
@@ -128,16 +123,24 @@ class SWEEnvironment:
             str: Line numbers and content where the string appears
         """
         try:
-            with open(file_path, 'r') as f:
-                lines = f.readlines()
+            # Escape special characters for grep
+            escaped_search = search_string.replace('\\', '\\\\').replace('"', '\\"').replace('$', '\\$')
             
-            matches = []
-            for i, line in enumerate(lines, 1):
-                if search_string in line:
-                    matches.append(f"{i:4d}|{line}")
+            # Use grep with line numbers
+            cmd = f'grep -n "{escaped_search}" {file_path} || true'
+            output = self.env.execute(cmd)
             
-            if matches:
-                return f"Found '{search_string}' in {file_path}:\n" + "".join(matches)
+            if output.strip():
+                # Format output with padding like before
+                lines = output.strip().split('\n')
+                formatted = []
+                for line in lines:
+                    parts = line.split(':', 1)
+                    if len(parts) == 2:
+                        line_num = parts[0]
+                        content = parts[1]
+                        formatted.append(f"{int(line_num):4d}|{content}\n")
+                return f"Found '{search_string}' in {file_path}:\n" + "".join(formatted)
             else:
                 return f"No matches found for '{search_string}' in {file_path}"
         except Exception as e:
@@ -155,8 +158,14 @@ class SWEEnvironment:
             str: Success message or error message
         """
         try:
-            with open(file_path, 'w') as f:
-                f.write(content)
+            # Escape content for heredoc - escape backslashes and dollar signs
+            escaped_content = content.replace('\\', '\\\\').replace('$', '\\$')
+            
+            # Use cat with heredoc to write file in container
+            # EOF delimiter is unlikely to appear in code
+            cmd = f"cat > {file_path} << 'ENDOFFILE'\n{content}\nENDOFFILE"
+            self.env.execute(cmd)
+            
             return f"Successfully wrote to {file_path}"
         except Exception as e:
             return f"Error writing to file {file_path}: {str(e)}"
