@@ -43,6 +43,9 @@ class SWEEnvironment:
         """
         try:
             patch_output = self.env.execute("git add -A && git diff --cached")
+            if isinstance(patch_output, dict):
+                patch_output = patch_output["output"]
+
             if patch_output.strip():
                 return patch_output
             else:

@@ -185,17 +185,17 @@ class ReactAgent:
 # ----END_FUNCTION_CALL----"""
                 self.set_message_content(id, response)
 
-                # print(self.get_context())
-                # print("*" * 100)
-                # print(response)
+                print(self.get_context())
+                print("*" * 100)
+                print(response)
                 parsed = self.parser.parse(response)
-                # print(parsed)
-                # print("*" * 100)
-                # print()
-                # print()
-                # print()
-                # print()
-                # print()
+                print(parsed)
+                print("*" * 100)
+                print()
+                print()
+                print()
+                print()
+                print()
                 
                 # Execute the tool
                 function_name = parsed["name"]
@@ -205,8 +205,8 @@ class ReactAgent:
                     tool = self.function_map[function_name]
                     try:
                         if function_name == "finish":
-                            self.add_message("tool", str(**arguments))
-                            return arguments
+                            self.add_message("tool", str(arguments))
+                            return self.finish(str(arguments))
                         else:
                             result = tool(**arguments)
                             self.add_message("tool", str(result))
