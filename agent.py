@@ -255,18 +255,6 @@ IMPORTANT GUIDELINES:
         # If we reach here, we've exceeded max steps
         return "Maximum steps exceeded without completion"
     
-    def set_user_prompt(self, user_prompt: str):
-        """Set the user prompt content."""
-        self.set_message_content(self.user_message_id, user_prompt)
-    
-    def get_instructions(self) -> str:
-        """Get the current instructions."""
-        return self.id_to_message[self.instructions_message_id]["content"]
-    
-    def set_instructions(self, instructions: str):
-        """Set the instructions content."""
-        self.set_message_content(self.instructions_message_id, instructions)
-    
     def save_history(self, file_name: str):
         """Save the agent's attributes as a YAML file."""
         data = {
