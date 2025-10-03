@@ -66,11 +66,15 @@ arg2_value (can be multiline)
                 
             # Split on first newline to separate arg name from value
             lines = arg_part.split('\n', 1)
-            if len(lines) < 2:
-                raise ValueError(f"Malformed argument in part {i}: {arg_part}")
+            if len(lines) < 1:
+                continue
             
             arg_name = lines[0].strip()
-            arg_value = lines[1].strip()
+            if len(lines) >= 2:
+                arg_value = lines[1].strip()
+            else:
+                # If there's no value after the arg name, treat it as empty string
+                arg_value = ""
             arguments[arg_name] = arg_value
         
         return {

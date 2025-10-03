@@ -43,7 +43,27 @@ class ReactAgent:
 
         # Set up the initial structure of the history
         # Create required root nodes: system -> user -> instructor
-        self.system_message_id = self.add_message("system", "You are a Smart ReAct agent.")
+        system_prompt = """You are a Smart ReAct agent designed to solve software engineering tasks.
+
+Your task is to understand the problem, explore the codebase, identify the bug or issue, and implement a fix.
+
+WORKFLOW:
+1. First, understand the problem statement thoroughly
+2. Explore the codebase to locate relevant files
+3. Read and analyze the code to identify the root cause
+4. Implement a fix by modifying the necessary files
+5. Test your fix to ensure it works correctly
+6. When you're confident the issue is resolved, call the finish function
+
+IMPORTANT GUIDELINES:
+- Always reason through your actions step by step
+- Use the available tools to explore and modify code
+- Test your changes before submitting
+- If you get stuck or make repeated mistakes, use add_instructions_and_backtrack to reset
+- Be methodical and thorough in your approach
+- Every response MUST end with a function call in the specified format"""
+        
+        self.system_message_id = self.add_message("system", system_prompt)
         self.user_message_id = self.add_message("user", "")
         self.instructions_message_id = self.add_message("instructor", "")
         
@@ -98,13 +118,20 @@ class ReactAgent:
         if self.current_message_id == -1:
             return ""
         
-        # Build context by including all messages from root to current
-        context_parts = []
+        # Build path from root to current message
+        path = []
+        current = self.current_message_id
+        while current is not None:
+            path.append(current)
+            current = self.id_to_message[current]["parent"]
         
-        # Add all messages in order (simplified approach)
-        for i in range(len(self.id_to_message)):
-            if i <= self.current_message_id:
-                context_parts.append(self.message_id_to_context(i))
+        # Reverse to get root-to-current order
+        path.reverse()
+        
+        # Build context from the path
+        context_parts = []
+        for message_id in path:
+            context_parts.append(self.message_id_to_context(message_id))
             
         return "\n".join(context_parts)
 

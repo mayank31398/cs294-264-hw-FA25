@@ -83,12 +83,14 @@ class SWEEnvironment:
         except Exception as e:
             return f"Error replacing content in {file_path}: {str(e)}"
     
-    def show_file(self, file_path: str) -> str:
+    def show_file(self, file_path: str, start_line: int = 1, num_lines: int = -1) -> str:
         """
-        Show the content of the file with line numbers.
+        Show the content of the file with line numbers. Optionally show only a range of lines.
         
         Args:
             file_path (str): Path to the file to display
+            start_line (int): Starting line number (1-indexed, default 1)
+            num_lines (int): Number of lines to show (-1 for all lines, default -1)
             
         Returns:
             str: File contents with line numbers or error message
@@ -97,14 +99,67 @@ class SWEEnvironment:
             with open(file_path, 'r') as f:
                 lines = f.readlines()
             
+            # Calculate range
+            if num_lines == -1:
+                end_line = len(lines)
+            else:
+                end_line = min(start_line - 1 + num_lines, len(lines))
+            
             # Add line numbers
             numbered_lines = []
-            for i, line in enumerate(lines, 1):
-                numbered_lines.append(f"{i:4d}|{line}")
+            for i in range(start_line - 1, end_line):
+                numbered_lines.append(f"{i + 1:4d}|{lines[i]}")
             
-            return f"Contents of {file_path}:\n" + "".join(numbered_lines)
+            total_lines = len(lines)
+            header = f"Contents of {file_path} (lines {start_line}-{end_line} of {total_lines}):\n"
+            return header + "".join(numbered_lines)
         except Exception as e:
             return f"Error reading file {file_path}: {str(e)}"
+    
+    def find_in_file(self, file_path: str, search_string: str) -> str:
+        """
+        Search for a string in a file and return the line numbers where it appears.
+        
+        Args:
+            file_path (str): Path to the file to search
+            search_string (str): String to search for
+            
+        Returns:
+            str: Line numbers and content where the string appears
+        """
+        try:
+            with open(file_path, 'r') as f:
+                lines = f.readlines()
+            
+            matches = []
+            for i, line in enumerate(lines, 1):
+                if search_string in line:
+                    matches.append(f"{i:4d}|{line}")
+            
+            if matches:
+                return f"Found '{search_string}' in {file_path}:\n" + "".join(matches)
+            else:
+                return f"No matches found for '{search_string}' in {file_path}"
+        except Exception as e:
+            return f"Error searching file {file_path}: {str(e)}"
+    
+    def write_file(self, file_path: str, content: str) -> str:
+        """
+        Write content to a file, creating it if it doesn't exist or overwriting it if it does.
+        
+        Args:
+            file_path (str): Path to the file to write
+            content (str): Content to write to the file
+            
+        Returns:
+            str: Success message or error message
+        """
+        try:
+            with open(file_path, 'w') as f:
+                f.write(content)
+            return f"Successfully wrote to {file_path}"
+        except Exception as e:
+            return f"Error writing to file {file_path}: {str(e)}"
 
 class DumbEnvironment:
     """
