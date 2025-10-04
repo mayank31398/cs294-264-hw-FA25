@@ -239,6 +239,7 @@ IMPORTANT GUIDELINES:
                             # The backtrack target is in arguments["at_message_id"]
                             backtrack_target = int(arguments["at_message_id"])
                             self.current_message_id = backtrack_target
+                            f.write(f">>> Backtracked to message {backtrack_target}\n")
                             print(f">>> Backtracked to message {backtrack_target}")
 
                         result = tool(**arguments)
