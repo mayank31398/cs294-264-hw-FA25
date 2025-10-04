@@ -175,6 +175,7 @@ IMPORTANT GUIDELINES:
         
         # Update the instructions message content only after validation
         self.set_message_content(self.instructions_message_id, instructions)
+        self.current_message_id = at_message_id
         
         return f"Successfully updated instructions. Will backtrack to message {at_message_id}"
 

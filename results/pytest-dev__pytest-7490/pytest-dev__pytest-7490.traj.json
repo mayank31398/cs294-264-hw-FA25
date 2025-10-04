@@ -1,0 +1,12 @@
+{
+  "info": {
+    "submission": "diff --git a/test_xfail.py b/test_xfail.py\nnew file mode 100644\nindex 000000000..71d3ed4e5\n--- /dev/null\n+++ b/test_xfail.py\n@@ -0,0 +1,6 @@\n+import pytest\n+\n+def test_xfail_test(request):\n+    mark = pytest.mark.xfail(reason=\"xfail\")\n+    request.node.add_marker(mark)\n+    assert 0\n",
+    "config": {
+      "agent": "swe-agent",
+      "model": "gpt-5-mini"
+    }
+  },
+  "messages": [],
+  "trajectory_format": "mini-swe-agent-1",
+  "instance_id": "pytest-dev__pytest-7490"
+}

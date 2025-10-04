@@ -1,0 +1,12 @@
+{
+  "info": {
+    "submission": "diff --git a/requests/_internal_utils.py b/requests/_internal_utils.py\nnew file mode 100644\nindex 0000000..6a8a90a\n--- /dev/null\n+++ b/requests/_internal_utils.py\n@@ -0,0 +1,50 @@\n+# -*- coding: utf-8 -*-\n+\n+\"\"\"\n+requests._internal_utils\n+~~~~~~~~~~~~~~~~~~~~~~~~\n+\n+Utility functions used internally by Requests that depend on very few\n+external helpers (such as compat).\n+\"\"\"\n+\n+from .compat import is_py2, builtin_str, str, bytes\n+\n+\n+def to_native_string(string, encoding='ascii'):\n+    \"\"\"Given a string object, regardless of type, return a representation of\n+    that string in the native string type, encoding and decoding where\n+    necessary. This assumes ASCII unless told otherwise.\n+\n+    Important: If ``string`` is a bytes instance, return it unchanged. Decoding\n+    arbitrary binary data using an encoding (ASCII by default) can fail and is\n+    not desired for raw request bodies. This preserves the expected behavior\n+    where binary payloads are passed through unchanged.\n+    \"\"\"\n+    if isinstance(string, builtin_str):\n+        out = string\n+    else:\n+        # Leave bytes as-is (important for binary payloads)\n+        if isinstance(string, bytes):\n+            out = string\n+        else:\n+            if is_py2:\n+                out = string.encode(encoding)\n+            else:\n+                out = string.decode(encoding)\n+\n+    return out\n+\n+\n+def unicode_is_ascii(u_string):\n+    \"\"\"Determine if a unicode string only contains ASCII characters.\n+\n+    :param str u_string: unicode string to check. Must be unicode and not\n+        Python 2 `str`.\n+    :rtype: bool\n+    \"\"\"\n+    try:\n+        u_string.encode('ascii')\n+    except (UnicodeEncodeError, AttributeError):\n+        return False\n+    return True\n",
+    "config": {
+      "agent": "swe-agent",
+      "model": "gpt-5-mini"
+    }
+  },
+  "messages": [],
+  "trajectory_format": "mini-swe-agent-1",
+  "instance_id": "psf__requests-2931"
+}

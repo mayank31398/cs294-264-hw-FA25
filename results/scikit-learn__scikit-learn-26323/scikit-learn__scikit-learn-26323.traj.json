@@ -1,0 +1,12 @@
+{
+  "info": {
+    "submission": "diff --git a/sklearn/compose/_column_transformer.py b/sklearn/compose/_column_transformer.py\nindex 0000000..0000000 100644\n--- a/sklearn/compose/_column_transformer.py\n+++ b/sklearn/compose/_column_transformer.py\n@@ -275,11 +275,29 @@ def set_output(self, *, transform=None):\n         super().set_output(transform=transform)\n         transformers = (\n             trans\n             for _, trans, _ in chain(\n                 self.transformers, getattr(self, \"transformers_\", [])\n             )\n             if trans not in {\"passthrough\", \"drop\"}\n         )\n         for trans in transformers:\n             _safe_set_output(trans, transform=transform)\n-\n-        return self\n+ \n+        # `remainder` can be an estimator (not only 'drop'/'passthrough').\n+        # When set_output is called before fitting, the remainder estimator is\n+        # stored in the `remainder` attribute and is not part of\n+        # self.transformers. Configure it explicitly here so the remainder's\n+        # output config is consistent with the rest of the ColumnTransformer.\n+        if self.remainder not in {\"passthrough\", \"drop\"}:\n+            # _safe_set_output may return a (possibly wrapped) estimator, so\n+            # assign it back to self.remainder to ensure the configured\n+            # estimator instance is used in subsequent fit/transform calls.\n+            self.remainder = _safe_set_output(self.remainder, transform=transform)\n+\n+        return self\n\nNo changes detected to generate a patch.",
+    "config": {
+      "agent": "swe-agent",
+      "model": "gpt-5-mini"
+    }
+  },
+  "messages": [],
+  "trajectory_format": "mini-swe-agent-1",
+  "instance_id": "scikit-learn__scikit-learn-26323"
+}

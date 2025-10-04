@@ -1,0 +1,12 @@
+{
+  "info": {
+    "submission": "diff --git a/sympy/geometry/point.py b/sympy/geometry/point.py\nindex e69de29..0000000 100644\n--- a/sympy/geometry/point.py\n+++ b/sympy/geometry/point.py\n@@\n     def __add__(self, other):\n@@\n-        try:\n-            s, o = Point._normalize_dimension(self, Point(other, evaluate=False))\n-        except TypeError:\n-            raise GeometryError(\"Don't know how to add {} and a Point object\".format(other))\n+        # If `other` is a SymPy Mul (e.g. scalar*Point), convert it into\n+        # a proper Point before passing into Point(...) so addition works\n+        # the same for `point + point*scalar` and `point + scalar*point`.\n+        if getattr(other, 'is_Mul', False):\n+            # find a single Point factor among the multiplicative args\n+            point_factors = [a for a in other.args if getattr(a, 'is_Point', False)]\n+            if len(point_factors) == 1:\n+                pt = point_factors[0]\n+                scalar = S.One\n+                for a in other.args:\n+                    if not getattr(a, 'is_Point', False):\n+                        scalar = scalar * a\n+                # use Point.__mul__ to construct a Point (pt * scalar)\n+                other = pt * scalar\n+\n+        try:\n+            s, o = Point._normalize_dimension(self, Point(other, evaluate=False))\n+        except TypeError:\n+            raise GeometryError(\"Don't know how to add {} and a Point object\".format(other))\n@@\n     def __mul__(self, factor):\n@@\n         factor = sympify(factor)\n         coords = [simplify(x*factor) for x in self.args]\n         return Point(coords, evaluate=False)\n \n+    def __rmul__(self, factor):\n+        \"\"\"Right-multiply: allow scalar * Point by delegating to __mul__.\"\"\"\n+        return self.__mul__(factor)\n+\n     def __neg__(self):\n         \"\"\"Negate the point.\"\"\"\n         coords = [-x for x in self.args]\n         return Point(coords, evaluate=False)\n\nNo changes detected to generate a patch.",
+    "config": {
+      "agent": "swe-agent",
+      "model": "gpt-5-mini"
+    }
+  },
+  "messages": [],
+  "trajectory_format": "mini-swe-agent-1",
+  "instance_id": "sympy__sympy-17655"
+}

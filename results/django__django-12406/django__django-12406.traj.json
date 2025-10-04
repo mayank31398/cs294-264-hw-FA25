@@ -1,0 +1,12 @@
+{
+  "info": {
+    "submission": "diff --git a/django/forms/models.py b/django/forms/models.py\nindex dafc11f995..ea2e8ca6db 100644\n--- a/django/forms/models.py\n+++ b/django/forms/models.py\n@@ -17,16 +17,10 @@ from django.forms.widgets import (\n )\n from django.utils.text import capfirst, get_text_list\n from django.utils.translation import gettext, gettext_lazy as _\n-\n-__all__ = (\n-    'ModelForm', 'BaseModelForm', 'model_to_dict', 'fields_for_model',\n-    'ModelChoiceField', 'ModelMultipleChoiceField', 'ALL_FIELDS',\n-    'BaseModelFormSet', 'modelformset_factory', 'BaseInlineFormSet',\n-    'inlineformset_factory', 'modelform_factory',\n+from django.forms.widgets import (\n+    HiddenInput, MultipleHiddenInput, SelectMultiple, RadioSelect,\n )\n \n-ALL_FIELDS = '__all__'\n-\n \n def construct_instance(form, instance, fields=None, exclude=None):\n     \"\"\"\n",
+    "config": {
+      "agent": "swe-agent",
+      "model": "gpt-5-mini"
+    }
+  },
+  "messages": [],
+  "trajectory_format": "mini-swe-agent-1",
+  "instance_id": "django__django-12406"
+}

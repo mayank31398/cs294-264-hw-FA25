@@ -1,0 +1,12 @@
+{
+  "info": {
+    "submission": "diff --git a/sphinx/ext/napoleon/docstring.py b/sphinx/ext/napoleon/docstring.py\nindex d8cb75a5f..f8a0bc297 100644\n--- a/sphinx/ext/napoleon/docstring.py\n+++ b/sphinx/ext/napoleon/docstring.py\n@@ -1026,6 +1026,9 @@ def _convert_numpy_type_spec(_type: str, location: str = None, translations: dic\n \n     tokens = _tokenize_type_spec(_type)\n     combined_tokens = _recombine_set_tokens(tokens)\n+    # Recombine tokens that belong inside parentheses so commas inside\n+    # parentheses (e.g. dict(str, str)) are treated as part of the same token.\n+    combined_tokens = _recombine_paren_tokens(combined_tokens)\n     types = [\n         (token, _token_type(token, location))\n         for token in combined_tokens\n@@ -1043,6 +1046,8 @@ def _convert_numpy_type_spec(_type: str, location: str = None, translations: dic\n \n     return converted\n \n+    return converted\n+\n \n class NumpyDocstring(GoogleDocstring):\n     \"\"\"Convert NumPy style docstrings to reStructuredText.\n",
+    "config": {
+      "agent": "swe-agent",
+      "model": "gpt-5-mini"
+    }
+  },
+  "messages": [],
+  "trajectory_format": "mini-swe-agent-1",
+  "instance_id": "sphinx-doc__sphinx-9230"
+}
